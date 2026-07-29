@@ -13,6 +13,8 @@ mongoose.connect(process.env.MONGO_URI)
 
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
+const uploadRoutes = require('./routes/upload');
+app.use('/api/upload', uploadRoutes);
 
 app.get('/', (req, res) => res.send('API running'));
 
