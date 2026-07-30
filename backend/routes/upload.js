@@ -49,5 +49,12 @@ router.post('/', requireAuth, upload.single('file'), async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
+router.get('/', requireAuth, async (req, res) => {
+  try {
+    const files = await CodeFile.find({ user: req.userId }).select('filename createdAt').sort({ createdAt: -1 });
+    res.json(files);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 module.exports = router;
