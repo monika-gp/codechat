@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../api';
 
 export default function Login() {
@@ -42,7 +42,7 @@ export default function Login() {
           required
         />
         <button type="submit">log in</button>
-        <p className="auth-switch">no account? <a href="/signup">sign up</a></p>
+        <p className="auth-switch">no account? <Link to="/signup">sign up</Link></p>
       </form>
     </div>
   );
