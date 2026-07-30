@@ -57,4 +57,19 @@ Question: ${question}`;
   }
 });
 
+// NEW — chat history route
+router.get('/:codeFileId', requireAuth, async (req, res) => {
+  try {
+    const messages = await ChatMessage.find({
+      codeFile: req.params.codeFileId,
+      user: req.userId,
+    }).sort({ createdAt: 1 });
+
+    res.json(messages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;
