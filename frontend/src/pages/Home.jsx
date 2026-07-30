@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 import api from '../api';
 
 export default function Home() {
@@ -108,7 +109,7 @@ export default function Home() {
                   <div key={i} className="message-pair">
                     <div className="chat-question">&gt; {m.question}</div>
                     <div className="chat-answer">
-                      <div>{m.answer}</div>
+                      <div className="markdown-answer"><ReactMarkdown>{m.answer}</ReactMarkdown></div>
                       {m.sources && <div className="chat-source">from {activeFile.filename} : {m.sources.join(', ')}</div>}
                     </div>
                   </div>

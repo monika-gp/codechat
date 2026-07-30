@@ -362,3 +362,36 @@ body {
   opacity: 0.3;
   cursor: not-allowed;
 }
+.markdown-answer {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.markdown-answer p {
+  margin-bottom: 8px;
+}
+
+.markdown-answer p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-answer strong {
+  color: #e4a33d;
+  font-weight: 600;
+}
+
+.markdown-answer ul, .markdown-answer ol {
+  margin: 6px 0 6px 20px;
+}
+
+.markdown-answer li {
+  margin-bottom: 4px;
+}
+
+.markdown-answer code {
+  font-family: 'JetBrains Mono', monospace;
+  background: #22262c;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 13px;
+}
