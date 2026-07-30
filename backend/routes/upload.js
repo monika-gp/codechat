@@ -4,7 +4,18 @@ const jwt = require('jsonwebtoken');
 const CodeFile = require('../models/CodeFile');
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 1 * 1024 * 1024 }, // 1MB max
+  fileFilter: (req, file, cb) => {
+    const allowedExtensions = /\.(js|jsx|ts|tsx|py|java|cpp|c|go|rb|php|html|css|json)$/i;
+    if (allowedExtensions.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Unsupported file type'));
+    }
+  },
+});
 const chunkCode = require('../utils/chunker');
 const CodeChunk = require('../models/CodeChunk');
 
@@ -23,7 +34,13 @@ function requireAuth(req, res, next) {
   }
 }
 
-router.post('/', requireAuth, upload.single('file'), async (req, res) => {
+router.post('/', requireAuth, (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+    next();
+  });}, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
