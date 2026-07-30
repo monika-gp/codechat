@@ -6,6 +6,7 @@ const ChatMessage = require('../models/ChatMessage');
 
 const router = express.Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const CodeFile = require('../models/CodeFile'); 
 
 function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -25,6 +26,12 @@ router.post('/', requireAuth, async (req, res) => {
     const { codeFileId, question } = req.body;
     if (!codeFileId || !question) {
       return res.status(400).json({ message: 'codeFileId and question are required' });
+    }
+
+    // NEW — ownership check
+    const file = await CodeFile.findOne({ _id: codeFileId, user: req.userId });
+    if (!file) {
+      return res.status(404).json({ message: 'File not found' });
     }
 
     const relevantChunks = await retrieveRelevantChunks(codeFileId, question);
