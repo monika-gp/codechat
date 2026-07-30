@@ -1,0 +1,60 @@
+const express = require('express');
+const jwt = require('jsonwebtoken');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const retrieveRelevantChunks = require('../utils/retriever');
+const ChatMessage = require('../models/ChatMessage');
+
+const router = express.Router();
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ message: 'No token provided' });
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.id;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+}
+
+router.post('/', requireAuth, async (req, res) => {
+  try {
+    const { codeFileId, question } = req.body;
+    if (!codeFileId || !question) {
+      return res.status(400).json({ message: 'codeFileId and question are required' });
+    }
+
+    const relevantChunks = await retrieveRelevantChunks(codeFileId, question);
+    const contextText = relevantChunks.map(c => `[${c.label}]\n${c.content}`).join('\n\n');
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-flash-lite-latest' });
+    const prompt = `You are a helpful assistant answering questions about a codebase. 
+Use only the following code context to answer. If the answer isn't in the context, say so.
+
+Context:
+${contextText}
+
+Question: ${question}`;
+
+    const result = await model.generateContent(prompt);
+    const answer = result.response.text();
+
+    const chatMessage = await ChatMessage.create({
+      codeFile: codeFileId,
+      user: req.userId,
+      question,
+      answer,
+      sources: relevantChunks.map(c => c.label),
+    });
+
+    res.status(201).json({ answer, sources: chatMessage.sources });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+module.exports = router;

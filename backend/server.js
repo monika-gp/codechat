@@ -15,6 +15,8 @@ const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 const uploadRoutes = require('./routes/upload');
 app.use('/api/upload', uploadRoutes);
+const chatRoutes = require('./routes/chat');
+app.use('/api/chat', chatRoutes);
 
 app.get('/', (req, res) => res.send('API running'));
 
