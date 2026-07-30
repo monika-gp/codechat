@@ -68,7 +68,9 @@ export default function Home() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <span className="topbar-logo">codechat</span>
+        <span className="topbar-logo">
+            <img src="/favicon3.svg" alt="" className="logo-icon" />
+            codechat</span>
         <div className="topbar-right">
           <span className="topbar-user">{userEmail}</span>
           <button className="logout-btn" onClick={handleLogout}>log out</button>

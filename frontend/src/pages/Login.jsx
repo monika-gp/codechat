@@ -24,7 +24,7 @@ export default function Login() {
   return (
     <div className="auth-page">
       <form onSubmit={handleSubmit} className="auth-form">
-        <h1>codechat</h1>
+        <h1 className="auth-logo"><img src="/favicon3.svg" alt="" className="logo-icon" />codechat</h1>
         <p className="auth-subtitle">log in to continue</p>
         {error && <p className="auth-error">{error}</p>}
         <input
