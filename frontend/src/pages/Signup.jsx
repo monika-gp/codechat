@@ -14,6 +14,7 @@ export default function Signup() {
     try {
       const res = await api.post('/auth/signup', { email, password });
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('email', res.data.email);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Signup failed');

@@ -11,6 +11,7 @@ export default function Home() {
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
+  const userEmail = localStorage.getItem('email');
   const authHeader = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {
@@ -57,56 +58,76 @@ export default function Home() {
     }
   };
 
-  return (
-    <div className="home">
-      <aside className="sidebar">
-        <div className="sidebar-title">FILES</div>
-        <div className="file-list">
-          {files.map(f => (
-            <div
-              key={f._id}
-              className={`file-item ${activeFile?._id === f._id ? 'active' : ''}`}
-              onClick={() => selectFile(f)}
-            >
-              {f.filename}
-            </div>
-          ))}
-        </div>
-        <label className="upload-btn">
-          upload file
-          <input type="file" onChange={handleUpload} hidden />
-        </label>
-      </aside>
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('email');
+    navigate('/login');
+  };
 
-      <main className="chat-panel">
-        {!activeFile ? (
-          <div className="empty-state">select or upload a file to start</div>
-        ) : (
-          <>
-            <div className="chat-header">codechat &mdash; {activeFile.filename}</div>
-            <div className="chat-messages">
-              {messages.map((m, i) => (
-                <div key={i} className="message-pair">
-                  <div className="chat-question">&gt; {m.question}</div>
-                  <div className="chat-answer">
-                    <div>{m.answer}</div>
-                    {m.sources && <div className="chat-source">from {activeFile.filename} : {m.sources.join(', ')}</div>}
-                  </div>
-                </div>
-              ))}
-              {loading && <div className="chat-question">thinking&hellip;</div>}
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <span className="topbar-logo">codechat</span>
+        <div className="topbar-right">
+          <span className="topbar-user">{userEmail}</span>
+          <button className="logout-btn" onClick={handleLogout}>log out</button>
+        </div>
+      </header>
+      <div className="home">
+        <aside className="sidebar">
+          <div className="sidebar-title">FILES</div>
+          <div className="file-list">
+            {files.map(f => (
+              <div
+                key={f._id}
+                className={`file-item ${activeFile?._id === f._id ? 'active' : ''}`}
+                onClick={() => selectFile(f)}
+              >
+                <span className="file-dot" />
+                {f.filename}
+              </div>
+            ))}
+          </div>
+          <label className="upload-btn">
+            + upload file
+            <input type="file" onChange={handleUpload} hidden />
+          </label>
+        </aside>
+
+        <main className="chat-panel">
+          {!activeFile ? (
+            <div className="empty-state">
+              <div className="empty-state-icon">&gt;_</div>
+              select or upload a file to start
             </div>
-            <form onSubmit={handleAsk} className="chat-input-row">
-              <span>&gt;</span>
-              <input
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="ask about this code…"
-              />
-            </form>
-          </>
-        )}
-      </main>
+          ) : (
+            <>
+              <div className="chat-header">codechat &mdash; {activeFile.filename}</div>
+              <div className="chat-messages">
+                {messages.map((m, i) => (
+                  <div key={i} className="message-pair">
+                    <div className="chat-question">&gt; {m.question}</div>
+                    <div className="chat-answer">
+                      <div>{m.answer}</div>
+                      {m.sources && <div className="chat-source">from {activeFile.filename} : {m.sources.join(', ')}</div>}
+                    </div>
+                  </div>
+                ))}
+                {loading && <div className="chat-question typing">thinking&hellip;</div>}
+              </div>
+              <form onSubmit={handleAsk} className="chat-input-row">
+                <span>&gt;</span>
+                <input
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder="ask about this code…"
+                />
+                <button type="submit" disabled={!question.trim()}>send</button>
+              </form>
+            </>
+          )}
+        </main>
+      </div>
     </div>
   );
 }
