@@ -5,6 +5,9 @@ const CodeFile = require('../models/CodeFile');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+const chunkCode = require('../utils/chunker');
+const CodeChunk = require('../models/CodeChunk');
+
 
 function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -31,7 +34,17 @@ router.post('/', requireAuth, upload.single('file'), async (req, res) => {
       content,
     });
 
-    res.status(201).json({ id: codeFile._id, filename: codeFile.filename });
+    // NEW — chunk the file and save the chunks
+    const chunks = chunkCode(content);
+    const chunkDocs = chunks.map(chunk => ({
+      codeFile: codeFile._id,
+      user: req.userId,
+      content: chunk.content,
+      label: chunk.label,
+    }));
+    await CodeChunk.insertMany(chunkDocs);
+
+    res.status(201).json({ id: codeFile._id, filename: codeFile.filename, chunksCreated: chunkDocs.length });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
