@@ -17,8 +17,11 @@ router.post('/signup', async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.status(201).json({ token, email: user.email });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+  if (err.code === 11000) {
+    return res.status(400).json({ message: 'Email already registered' });
   }
+  res.status(500).json({ message: 'Server error' });
+}
 });
 
 router.post('/login', async (req, res) => {
@@ -33,8 +36,8 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, email: user.email });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
+  res.status(500).json({ message: 'Server error' });
+}
 });
 
 module.exports = router;

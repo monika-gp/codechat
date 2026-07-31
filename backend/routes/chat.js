@@ -59,9 +59,12 @@ Question: ${question}`;
 
     res.status(201).json({ answer, sources: chatMessage.sources });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+  console.error(err);
+  if (err.name === 'CastError') {
+    return res.status(400).json({ message: 'Invalid file ID format' });
   }
+  res.status(500).json({ message: 'Server error' });
+}
 });
 
 // NEW — chat history route
@@ -74,9 +77,12 @@ router.get('/:codeFileId', requireAuth, async (req, res) => {
 
     res.json(messages);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+  console.error(err);
+  if (err.name === 'CastError') {
+    return res.status(400).json({ message: 'Invalid file ID format' });
   }
+  res.status(500).json({ message: 'Server error' });
+}
 });
 
 module.exports = router;

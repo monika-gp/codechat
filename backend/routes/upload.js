@@ -63,15 +63,23 @@ router.post('/', requireAuth, (req, res, next) => {
 
     res.status(201).json({ id: codeFile._id, filename: codeFile.filename, chunksCreated: chunkDocs.length });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+  console.error(err);
+  if (err.name === 'CastError') {
+    return res.status(400).json({ message: 'Invalid file ID format' });
   }
+  res.status(500).json({ message: 'Server error' });
+}
 });
 router.get('/', requireAuth, async (req, res) => {
   try {
     const files = await CodeFile.find({ user: req.userId }).select('filename createdAt').sort({ createdAt: -1 });
     res.json(files);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+  console.error(err);
+  if (err.name === 'CastError') {
+    return res.status(400).json({ message: 'Invalid file ID format' });
   }
+  res.status(500).json({ message: 'Server error' });
+}
 });
 module.exports = router;
