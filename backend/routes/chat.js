@@ -28,20 +28,27 @@ router.post('/', requireAuth, async (req, res) => {
       return res.status(400).json({ message: 'codeFileId and question are required' });
     }
 
-    // NEW — ownership check
     const file = await CodeFile.findOne({ _id: codeFileId, user: req.userId });
     if (!file) {
       return res.status(404).json({ message: 'File not found' });
     }
 
+    // NEW — fetch the last few messages for this file to give the AI conversation context
+    const recentMessages = await ChatMessage.find({ codeFile: codeFileId, user: req.userId })
+      .sort({ createdAt: -1 })
+      .limit(3);
+    const conversationContext = recentMessages.reverse()
+      .map(m => `Q: ${m.question}\nA: ${m.answer}`)
+      .join('\n\n');
+
     const relevantChunks = await retrieveRelevantChunks(codeFileId, question);
     const contextText = relevantChunks.map(c => `[${c.label}]\n${c.content}`).join('\n\n');
 
     const model = genAI.getGenerativeModel({ model: 'gemini-flash-lite-latest' });
-    const prompt = `You are a helpful assistant answering questions about a codebase. 
+    const prompt = `You are a helpful assistant answering questions about a codebase.
 Use only the following code context to answer. If the answer isn't in the context, say so.
 
-Context:
+${conversationContext ? `Previous conversation:\n${conversationContext}\n\n` : ''}Code context:
 ${contextText}
 
 Question: ${question}`;
