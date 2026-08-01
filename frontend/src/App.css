@@ -412,3 +412,13 @@ body {
   justify-content: center;
   gap: 8px;
 }
+.upload-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.upload-row .upload-btn {
+  flex: 1;
+  margin-top: 0;
+}

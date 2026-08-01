@@ -36,22 +36,23 @@ function requireAuth(req, res, next) {
 
 router.post('/', requireAuth, (req, res, next) => {
   upload.single('file')(req, res, (err) => {
-    if (err) {
-      return res.status(400).json({ message: err.message });
-    }
+    if (err) return res.status(400).json({ message: err.message });
     next();
-  });}, async (req, res) => {
+  });
+}, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
     const content = req.file.buffer.toString('utf-8');
+    const project = req.body.project || 'Uploads';
+
     const codeFile = await CodeFile.create({
       user: req.userId,
       filename: req.file.originalname,
+      project,
       content,
     });
 
-    // NEW — chunk the file and save the chunks
     const chunks = chunkCode(content);
     const chunkDocs = chunks.map(chunk => ({
       codeFile: codeFile._id,
@@ -61,25 +62,25 @@ router.post('/', requireAuth, (req, res, next) => {
     }));
     await CodeChunk.insertMany(chunkDocs);
 
-    res.status(201).json({ id: codeFile._id, filename: codeFile.filename, chunksCreated: chunkDocs.length });
+    res.status(201).json({ id: codeFile._id, filename: codeFile.filename, project: codeFile.project, chunksCreated: chunkDocs.length });
   } catch (err) {
-  console.error(err);
-  if (err.name === 'CastError') {
-    return res.status(400).json({ message: 'Invalid file ID format' });
+    console.error(err);
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid file ID format' });
+    }
+    res.status(500).json({ message: 'Server error' });
   }
-  res.status(500).json({ message: 'Server error' });
-}
 });
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const files = await CodeFile.find({ user: req.userId }).select('filename createdAt').sort({ createdAt: -1 });
+    const files = await CodeFile.find({ user: req.userId }).select('filename project createdAt').sort({ createdAt: -1 });
     res.json(files);
   } catch (err) {
-  console.error(err);
-  if (err.name === 'CastError') {
-    return res.status(400).json({ message: 'Invalid file ID format' });
+    console.error(err);
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid file ID format' });
+    }
+    res.status(500).json({ message: 'Server error' });
   }
-  res.status(500).json({ message: 'Server error' });
-}
 });
 module.exports = router;

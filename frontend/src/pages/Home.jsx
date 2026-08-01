@@ -29,15 +29,26 @@ export default function Home() {
   };
 
   const handleUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
+
+  for (const file of files) {
+    const relativePath = file.webkitRelativePath || '';
+    const project = relativePath.includes('/') ? relativePath.split('/')[0] : 'Uploads';
+
     const formData = new FormData();
     formData.append('file', file);
-    await api.post('/upload', formData, {
-      headers: { ...authHeader.headers, 'Content-Type': 'multipart/form-data' },
-    });
-    loadFiles();
-  };
+    formData.append('project', project);
+    try {
+      await api.post('/upload', formData, {
+        headers: { ...authHeader.headers, 'Content-Type': 'multipart/form-data' },
+      });
+    } catch (err) {
+      console.error(`Failed to upload ${file.name}:`, err);
+    }
+  }
+  loadFiles();
+};
 
   const selectFile = async (file) => {
     setActiveFile(file);
@@ -91,10 +102,16 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <label className="upload-btn">
-            + upload file
-            <input type="file" onChange={handleUpload} hidden />
-          </label>
+          <div className="upload-row">
+            <label className="upload-btn">
+                + files
+                <input type="file" onChange={handleUpload} multiple hidden />
+            </label>
+            <label className="upload-btn">
+            + folder
+            <input type="file" onChange={handleUpload} multiple webkitdirectory="" hidden />
+            </label>
+        </div>
         </aside>
 
         <main className="chat-panel">
