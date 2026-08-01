@@ -1,8 +1,10 @@
 const CodeChunk = require('../models/CodeChunk');
 const { embedText, cosineSimilarity } = require('./embedder');
 
-async function retrieveRelevantChunks(codeFileId, question, topN = 3) {
+async function retrieveRelevantChunks(codeFileId, question) {
   const chunks = await CodeChunk.find({ codeFile: codeFileId });
+  const topN = Math.min(6, Math.max(3, Math.ceil(chunks.length / 4)));
+
   const queryWords = question.toLowerCase().split(/\W+/).filter(Boolean);
   const questionEmbedding = await embedText(question);
 
