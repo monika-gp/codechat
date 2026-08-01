@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const CodeFile = require('../models/CodeFile');
 const ChatMessage = require('../models/ChatMessage');
 
+
 const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -19,6 +20,7 @@ const upload = multer({
 });
 const chunkCode = require('../utils/chunker');
 const CodeChunk = require('../models/CodeChunk');
+const { embedText } = require('../utils/embedder');
 
 
 function requireAuth(req, res, next) {
@@ -55,12 +57,17 @@ router.post('/', requireAuth, (req, res, next) => {
     });
 
     const chunks = chunkCode(content);
-    const chunkDocs = chunks.map(chunk => ({
-      codeFile: codeFile._id,
-      user: req.userId,
-      content: chunk.content,
-      label: chunk.label,
-    }));
+    const chunkDocs = [];
+    for (const chunk of chunks) {
+      const embedding = await embedText(chunk.content);
+      chunkDocs.push({
+        codeFile: codeFile._id,
+        user: req.userId,
+        content: chunk.content,
+        label: chunk.label,
+        embedding: embedding || [],
+     });
+    }
     await CodeChunk.insertMany(chunkDocs);
 
     res.status(201).json({ id: codeFile._id, filename: codeFile.filename, project: codeFile.project, chunksCreated: chunkDocs.length });
