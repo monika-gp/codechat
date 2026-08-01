@@ -69,7 +69,16 @@ export default function Home() {
       setLoading(false);
     }
   };
-
+  const handleDelete = async (e, fileId) => {
+    e.stopPropagation(); // prevent triggering selectFile when clicking delete
+    if (!window.confirm('Delete this file and its chat history?')) return;
+     await api.delete(`/upload/${fileId}`, authHeader);
+     if (activeFile?._id === fileId) {
+       setActiveFile(null);
+       setMessages([]);
+    }
+    loadFiles();
+  };
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('email');
@@ -91,17 +100,29 @@ export default function Home() {
         <aside className="sidebar">
           <div className="sidebar-title">FILES</div>
           <div className="file-list">
-            {files.map(f => (
-              <div
-                key={f._id}
-                className={`file-item ${activeFile?._id === f._id ? 'active' : ''}`}
-                onClick={() => selectFile(f)}
-              >
-                <span className="file-dot" />
-                {f.filename}
-              </div>
-            ))}
-          </div>
+  {Object.entries(
+    files.reduce((groups, f) => {
+      const key = f.project || 'Uploads';
+      (groups[key] = groups[key] || []).push(f);
+      return groups;
+    }, {})
+  ).map(([project, projectFiles]) => (
+    <div key={project} className="project-group">
+      <div className="project-label">{project}</div>
+      {projectFiles.map(f => (
+        <div
+            key={f._id}
+            className={`file-item ${activeFile?._id === f._id ? 'active' : ''}`}
+            onClick={() => selectFile(f)}
+        >
+        <span className="file-dot" />
+        <span className="file-name">{f.filename}</span>
+        <button className="delete-btn" onClick={(e) => handleDelete(e, f._id)}>&times;</button>
+        </div>
+      ))}
+    </div>
+  ))}
+</div>
           <div className="upload-row">
             <label className="upload-btn">
                 + files

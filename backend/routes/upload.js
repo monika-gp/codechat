@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
 const CodeFile = require('../models/CodeFile');
+const ChatMessage = require('../models/ChatMessage');
 
 const router = express.Router();
 const upload = multer({
@@ -75,6 +76,26 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     const files = await CodeFile.find({ user: req.userId }).select('filename project createdAt').sort({ createdAt: -1 });
     res.json(files);
+  } catch (err) {
+    console.error(err);
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid file ID format' });
+    }
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const file = await CodeFile.findOne({ _id: req.params.id, user: req.userId });
+    if (!file) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
+    await CodeChunk.deleteMany({ codeFile: file._id });
+    await ChatMessage.deleteMany({ codeFile: file._id });
+    await CodeFile.deleteOne({ _id: file._id });
+
+    res.json({ message: 'File deleted' });
   } catch (err) {
     console.error(err);
     if (err.name === 'CastError') {
