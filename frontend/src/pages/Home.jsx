@@ -79,6 +79,16 @@ export default function Home() {
     }
     loadFiles();
   };
+  const handleDeleteProject = async (e, project) => {
+  e.stopPropagation();
+  if (!window.confirm(`Delete the entire "${project}" project and all its files?`)) return;
+  await api.delete(`/upload/project/${encodeURIComponent(project)}`, authHeader);
+  if (activeFile?.project === project) {
+    setActiveFile(null);
+    setMessages([]);
+  }
+  loadFiles();
+};
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('email');
@@ -108,7 +118,11 @@ export default function Home() {
     }, {})
   ).map(([project, projectFiles]) => (
     <div key={project} className="project-group">
-      <div className="project-label">{project}</div>
+  <div className="project-label-row">
+    <span className="project-label">{project}</span>
+    <button className="delete-btn" onClick={(e) => handleDeleteProject(e, project)}>&times;</button>
+  </div>
+
       {projectFiles.map(f => (
         <div
             key={f._id}

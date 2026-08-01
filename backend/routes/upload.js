@@ -84,23 +84,18 @@ router.get('/', requireAuth, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/project/:project', requireAuth, async (req, res) => {
   try {
-    const file = await CodeFile.findOne({ _id: req.params.id, user: req.userId });
-    if (!file) {
-      return res.status(404).json({ message: 'File not found' });
-    }
+    const files = await CodeFile.find({ user: req.userId, project: req.params.project });
+    const fileIds = files.map(f => f._id);
 
-    await CodeChunk.deleteMany({ codeFile: file._id });
-    await ChatMessage.deleteMany({ codeFile: file._id });
-    await CodeFile.deleteOne({ _id: file._id });
+    await CodeChunk.deleteMany({ codeFile: { $in: fileIds } });
+    await ChatMessage.deleteMany({ codeFile: { $in: fileIds } });
+    await CodeFile.deleteMany({ _id: { $in: fileIds } });
 
-    res.json({ message: 'File deleted' });
+    res.json({ message: 'Project deleted', filesDeleted: fileIds.length });
   } catch (err) {
     console.error(err);
-    if (err.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid file ID format' });
-    }
     res.status(500).json({ message: 'Server error' });
   }
 });

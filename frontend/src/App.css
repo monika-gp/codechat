@@ -464,3 +464,16 @@ body {
 .delete-btn:hover {
   color: #e05252;
 }
+.project-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-label-row .delete-btn {
+  opacity: 0;
+}
+
+.project-label-row:hover .delete-btn {
+  opacity: 1;
+}
