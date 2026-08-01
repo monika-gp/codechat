@@ -9,6 +9,8 @@ export default function Home() {
   const [messages, setMessages] = useState([]);
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
+  const [filesLoading, setFilesLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
@@ -24,31 +26,38 @@ export default function Home() {
   }, []);
 
   const loadFiles = async () => {
-    const res = await api.get('/upload', authHeader);
-    setFiles(res.data);
+    setFilesLoading(true);
+    try {
+      const res = await api.get('/upload', authHeader);
+      setFiles(res.data);
+    } finally {
+      setFilesLoading(false);
+    }
   };
 
   const handleUpload = async (e) => {
-  const files = Array.from(e.target.files);
-  if (files.length === 0) return;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
-  for (const file of files) {
-    const relativePath = file.webkitRelativePath || '';
-    const project = relativePath.includes('/') ? relativePath.split('/')[0] : 'Uploads';
+    setUploading(true);
+    for (const file of files) {
+      const relativePath = file.webkitRelativePath || '';
+      const project = relativePath.includes('/') ? relativePath.split('/')[0] : 'Uploads';
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('project', project);
-    try {
-      await api.post('/upload', formData, {
-        headers: { ...authHeader.headers, 'Content-Type': 'multipart/form-data' },
-      });
-    } catch (err) {
-      console.error(`Failed to upload ${file.name}:`, err);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('project', project);
+      try {
+        await api.post('/upload', formData, {
+          headers: { ...authHeader.headers, 'Content-Type': 'multipart/form-data' },
+        });
+      } catch (err) {
+        console.error(`Failed to upload ${file.name}:`, err);
+      }
     }
-  }
-  loadFiles();
-};
+    setUploading(false);
+    loadFiles();
+  };
 
   const selectFile = async (file) => {
     setActiveFile(file);
@@ -69,26 +78,29 @@ export default function Home() {
       setLoading(false);
     }
   };
+
   const handleDelete = async (e, fileId) => {
-    e.stopPropagation(); // prevent triggering selectFile when clicking delete
+    e.stopPropagation();
     if (!window.confirm('Delete this file and its chat history?')) return;
-     await api.delete(`/upload/${fileId}`, authHeader);
-     if (activeFile?._id === fileId) {
-       setActiveFile(null);
-       setMessages([]);
+    await api.delete(`/upload/${fileId}`, authHeader);
+    if (activeFile?._id === fileId) {
+      setActiveFile(null);
+      setMessages([]);
     }
     loadFiles();
   };
+
   const handleDeleteProject = async (e, project) => {
-  e.stopPropagation();
-  if (!window.confirm(`Delete the entire "${project}" project and all its files?`)) return;
-  await api.delete(`/upload/project/${encodeURIComponent(project)}`, authHeader);
-  if (activeFile?.project === project) {
-    setActiveFile(null);
-    setMessages([]);
-  }
-  loadFiles();
-};
+    e.stopPropagation();
+    if (!window.confirm(`Delete the entire "${project}" project and all its files?`)) return;
+    await api.delete(`/upload/project/${encodeURIComponent(project)}`, authHeader);
+    if (activeFile?.project === project) {
+      setActiveFile(null);
+      setMessages([]);
+    }
+    loadFiles();
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('email');
@@ -99,8 +111,9 @@ export default function Home() {
     <div className="app-shell">
       <header className="topbar">
         <span className="topbar-logo">
-            <img src="/favicon3.svg" alt="" className="logo-icon" />
-            codechat</span>
+          <img src="/favicon3.svg" alt="" className="logo-icon" />
+          codechat
+        </span>
         <div className="topbar-right">
           <span className="topbar-user">{userEmail}</span>
           <button className="logout-btn" onClick={handleLogout}>log out</button>
@@ -110,43 +123,46 @@ export default function Home() {
         <aside className="sidebar">
           <div className="sidebar-title">FILES</div>
           <div className="file-list">
-  {Object.entries(
-    files.reduce((groups, f) => {
-      const key = f.project || 'Uploads';
-      (groups[key] = groups[key] || []).push(f);
-      return groups;
-    }, {})
-  ).map(([project, projectFiles]) => (
-    <div key={project} className="project-group">
-  <div className="project-label-row">
-    <span className="project-label">{project}</span>
-    <button className="delete-btn" onClick={(e) => handleDeleteProject(e, project)}>&times;</button>
-  </div>
-
-      {projectFiles.map(f => (
-        <div
-            key={f._id}
-            className={`file-item ${activeFile?._id === f._id ? 'active' : ''}`}
-            onClick={() => selectFile(f)}
-        >
-        <span className="file-dot" />
-        <span className="file-name">{f.filename}</span>
-        <button className="delete-btn" onClick={(e) => handleDelete(e, f._id)}>&times;</button>
-        </div>
-      ))}
-    </div>
-  ))}
-</div>
+            {filesLoading ? (
+              <div className="sidebar-loading">loading files…</div>
+            ) : (
+              Object.entries(
+                files.reduce((groups, f) => {
+                  const key = f.project || 'Uploads';
+                  (groups[key] = groups[key] || []).push(f);
+                  return groups;
+                }, {})
+              ).map(([project, projectFiles]) => (
+                <div key={project} className="project-group">
+                  <div className="project-label-row">
+                    <span className="project-label">{project}</span>
+                    <button className="delete-btn" onClick={(e) => handleDeleteProject(e, project)}>&times;</button>
+                  </div>
+                  {projectFiles.map(f => (
+                    <div
+                      key={f._id}
+                      className={`file-item ${activeFile?._id === f._id ? 'active' : ''}`}
+                      onClick={() => selectFile(f)}
+                    >
+                      <span className="file-dot" />
+                      <span className="file-name">{f.filename}</span>
+                      <button className="delete-btn" onClick={(e) => handleDelete(e, f._id)}>&times;</button>
+                    </div>
+                  ))}
+                </div>
+              ))
+            )}
+          </div>
           <div className="upload-row">
-            <label className="upload-btn">
-                + files
-                <input type="file" onChange={handleUpload} multiple hidden />
+            <label className={`upload-btn ${uploading ? 'disabled' : ''}`}>
+              {uploading ? 'uploading…' : '+ files'}
+              <input type="file" onChange={handleUpload} multiple hidden disabled={uploading} />
             </label>
-            <label className="upload-btn">
-            + folder
-            <input type="file" onChange={handleUpload} multiple webkitdirectory="" hidden />
+            <label className={`upload-btn ${uploading ? 'disabled' : ''}`}>
+              {uploading ? 'uploading…' : '+ folder'}
+              <input type="file" onChange={handleUpload} multiple webkitdirectory="" hidden disabled={uploading} />
             </label>
-        </div>
+          </div>
         </aside>
 
         <main className="chat-panel">

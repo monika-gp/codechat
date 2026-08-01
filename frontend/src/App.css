@@ -477,3 +477,14 @@ body {
 .project-label-row:hover .delete-btn {
   opacity: 1;
 }
+.sidebar-loading {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #5f6369;
+  padding: 8px;
+}
+
+.upload-btn.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
